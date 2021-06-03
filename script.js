@@ -63,9 +63,50 @@ const inputElevation = document.querySelector(".form__input--elevation")
 
 //with Class Version
 
+class Workouts {
+  date = new Date()
+  id = (Date.now() + "").slice(-10)
+  constructor(coords, distance, duration) {
+    this.coords = coords
+    this.distance = distance
+    this.duration = duration
+  }
+}
+
+class Running extends Workouts {
+  constructor(coords, distance, duration, cadence) {
+    super(coords, distance, duration)
+    this.cadence = cadence
+    this.calcPace()
+  }
+
+  calcPace() {
+    // min/km
+    this.pace = this.duration / this.distance
+    return this.pace
+  }
+}
+
+class Cycling extends Workouts {
+  constructor(coords, distance, duration, elevationGain) {
+    super(coords, distance, duration)
+    this.elevationGain = elevationGain
+    this.calcSpeed()
+  }
+  calcSpeed() {
+    this.speed = this.distance / (this.duration / 60)
+    return this.speed
+  }
+}
+
+// const running1 = new Running([12, 45.6], 5.7, 29, 187)
+// console.log(running1)
+// const cycling1 = new Cycling([12, 45.6], 38, 79, 387)
+// console.log(cycling1)
 class App {
   #map
   #mapEvent
+  #workouts = []
   constructor() {
     //why i am calling here
     //bacuse contructor function calls immediately with we have to call manually
@@ -97,7 +138,19 @@ class App {
   _newWorkouts(e) {
     e.preventDefault()
 
-    inputDistance.value = inputCadence.value = inputDuration.value = inputElevation.value = ""
+    // helper functions
+
+    const validInputs = (...inputs) => inputs.every((input) => Number.isFinite(input))
+    const allPositive = (...inputs) => inputs.every((input) => input > 0)
+
+    //get the data values
+
+    const type = inputType.value
+    const distance = +inputDistance.value
+    const duration = +inputDuration.value
+    let workout
+    // alert(type)
+
     const { lat, lng } = this.#mapEvent.latlng
     console.log(lat, lng)
     L.marker([lat, lng])
@@ -113,6 +166,39 @@ class App {
       )
       .setPopupContent("Workouts")
       .openPopup()
+
+    //check the validation
+
+    //if workout is running
+    if (type === "running") {
+      const cadence = +inputCadence.value
+
+      if (
+        // !Number.isFinite(distance) ||
+        // !Number.isFinite(duration) ||
+        // !Number.isFinite(cadence)
+        !validInputs(distance, duration, cadence) ||
+        !allPositive(distance, duration, cadence)
+      ) {
+        alert("The number should be in postive")
+      }
+      workout = new Running([lat, lng], distance, duration, cadence)
+    }
+
+    // if workout is cycling
+    if (type === "cycling") {
+      const elevation = +inputElevation.value
+
+      if (!validInputs(distance, duration, elevation) || !allPositive(distance, duration)) {
+        alert("The number should be in postive")
+      }
+      workout = new Cycling([lat, lng], distance, duration, elevation)
+    }
+    console.log("workout", workout)
+    //create new Object into workout array
+    this.#workouts.push(workout)
+    // console.log(this.#workout)
+    inputDistance.value = inputCadence.value = inputDuration.value = inputElevation.value = ""
   }
   _showForm(mapE) {
     console.log("thisKeyword", this)
